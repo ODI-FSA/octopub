@@ -1,0 +1,13 @@
+<div class="jumbotron">
+  <h1>FSA Data Publisher</h1>
+  <p>Publish data easily, quickly and correctly</p>
+  <p class="text-center" id="images">
+    <img src="http://www.food.gov.uk/sites/default/files/styles/home_page_featured/public/business/business-industry.jpeg?itok=hhU42DI9" alt="" />
+    <img src="http://www.food.gov.uk/sites/default/files/styles/home_page_featured/public/environment/enforcement-regulation.jpeg" alt="" />
+    <img src="http://www.food.gov.uk/sites/default/files/styles/home_page_featured/public/science/science-research.jpeg?itok=8irazz-a" alt="" />
+  </p>
+  <% unless current_user %>
+    <p><%= link_to "<i class='fa fa-github'></i> Sign in with Github".html_safe, '/auth/github', class: "btn btn-primary btn-lg" %></p>
+    <small><%= link_to "Not got a Github account?", "https://github.com/join" %></small>
+  <% end %>
+</div>
