@@ -44,11 +44,12 @@ end
 
 group :production do
   gem 'rails_12factor'
-  gem 'unicorn'
+  gem 'puma'
 end
 
 group :development do
   gem 'pry-remote'
+  gem 'letter_opener'
 end
 
 gem 'omniauth-github'
@@ -69,3 +70,11 @@ gem 'aws-sdk', '~> 2'
 gem 'pusher'
 gem 'sidekiq'
 gem 'open_uri_redirections'
+gem 'certificate-factory'
+gem 'grape'
+gem 'grape-route-helpers'
+gem 'grape-swagger'
+gem 'grape-swagger-rails', github: 'pezholio/grape-swagger-rails', branch: 'change-layout-test-branch'
+gem 'grape-swagger-entity'
+gem 'redcarpet'
+gem 'rouge'

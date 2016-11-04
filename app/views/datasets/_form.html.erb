@@ -90,7 +90,7 @@
           progressBar.removeClass('active')
           // extract key and generate URL from response
           var key   = $(data.jqXHR.responseXML).find("Key").text();
-          var url   = '//' + form.data('host') + '/' + key;
+          var url   = 'https://' + form.data('host') + '/' + key;
 
           // create hidden field
           var input = $("<input />", { type:'hidden', name: fileInput.attr('name'), value: url, class: 's3-file' })
@@ -109,7 +109,9 @@
     }
 
     function postForm(form) {
-      var channelID = '<%= SecureRandom.uuid %>'
+      var channelID = form.attr('method') + '-<%= SecureRandom.uuid %>'
+
+      console.log(channelID)
 
       $.ajax({
         type: form.attr('method'),
@@ -127,7 +129,11 @@
       var channel = pusher.subscribe(channelID);
 
       channel.bind('dataset_created', function(data) {
-        window.location = '/dashboard?success=true'
+        if (channelID.match(/post/)) {
+          window.location = '/datasets/created'
+        } else {
+          window.location = '/datasets/edited'
+        }
       })
       channel.bind('dataset_failed', function(data) {
         addErrors(data)
