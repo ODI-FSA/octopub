@@ -1,9 +1,9 @@
-require 'spec_helper'
+require 'rails_helper'
 
 describe 'GET /datasets/:id' do
 
   before(:each) do
-    @user = create(:user, name: "User McUser", email: "user@user.com")
+    @user = create(:user)
   end
 
   it 'shows all files for a particular dataset' do
@@ -12,7 +12,7 @@ describe 'GET /datasets/:id' do
       create(:dataset_file, title: 'File 2')
     ])
 
-    get "/api/datasets/#{dataset.id}/files", nil, {'Authorization' => "Token token=#{@user.api_key}"}
+    get "/api/datasets/#{dataset.id}/files", headers: {'Authorization' => "Token token=#{@user.api_key}"}
 
     json = JSON.parse(response.body)
 

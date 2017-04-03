@@ -1,8 +1,31 @@
-class User < ActiveRecord::Base
+# == Schema Information
+#
+# Table name: users
+#
+#  id              :integer          not null, primary key
+#  provider        :string
+#  uid             :string
+#  email           :string
+#  created_at      :datetime
+#  updated_at      :datetime
+#  name            :string
+#  token           :string
+#  api_key         :string
+#  org_dataset_ids :text             default([]), is an Array
+#  twitter_handle  :string
+#  role            :integer          default("publisher"), not null
+#  restricted      :boolean          default(FALSE)
+#
+
+class User < ApplicationRecord
+
+  enum role: [:publisher, :superuser, :admin]
 
   has_many :datasets
+  has_many :dataset_file_schemas
+  has_and_belongs_to_many :allocated_dataset_file_schemas, class_name: 'DatasetFileSchema', join_table: :allocated_dataset_file_schemas_users
 
-  before_create :generate_api_key
+  before_validation :generate_api_key, on: :create
 
   def self.refresh_datasets id, channel_id = nil
     user = User.find id
@@ -11,7 +34,7 @@ class User < ActiveRecord::Base
   end
 
   def self.find_for_github_oauth(auth)
-    user = User.find_or_create_by(provider: auth["provider"], uid: auth["uid"])
+    user = User.where(provider: auth["provider"], uid: auth["uid"]).first_or_create
     user.update_attributes(
                            name: auth["info"]["nickname"],
                            email: auth["info"]["email"],
@@ -38,7 +61,14 @@ class User < ActiveRecord::Base
   end
 
   def organizations
-    @organizations ||= octokit_client.org_memberships.select { |m| m[:role] == 'admin' }
+    @organizations ||= get_organization_memberships
+  end
+
+  def get_organization_memberships
+    # Note cache key is based on model's id and updated at attributes
+    Rails.cache.fetch("#{cache_key}/organization_memberships", expires_in: 1.day) do
+      octokit_client.org_memberships.select { |m| m[:role] == 'admin' }
+    end
   end
 
   def org_datasets
@@ -46,7 +76,7 @@ class User < ActiveRecord::Base
   end
 
   def all_datasets
-    Dataset.where(id: all_dataset_ids) || []
+    Dataset.where(id: all_dataset_ids).order(:id) || []
   end
 
   def all_dataset_ids

@@ -1,4 +1,4 @@
-require 'spec_helper'
+require 'rails_helper'
 
 describe GitData, :vcr do
 
@@ -31,8 +31,8 @@ describe GitData, :vcr do
       end
 
       it 'sets the relevant instance variables' do
-        expect(@repo.html_url).to eq('https://github.com/git-data-publisher/my-awesome-repo')
-        expect(@repo.full_name).to eq('git-data-publisher/my-awesome-repo')
+        expect(@repo.html_url).to eq("https://github.com/#{@username}/my-awesome-repo")
+        expect(@repo.full_name).to eq("#{@username}/my-awesome-repo")
       end
     end
 
@@ -50,6 +50,30 @@ describe GitData, :vcr do
       it 'sets the relevant instance variables' do
         expect(@repo.html_url).to eq('https://github.com/octopub-data/my-awesome-repo')
         expect(@repo.full_name).to eq('octopub-data/my-awesome-repo')
+      end
+    end
+
+    context 'creating private repos' do
+      it 'works if private repos are available' do
+        # @username should have private repos available if running this test
+        # without a cassette
+        @repo = GitData.create(@username, @name, client: @client, restricted: true)
+        expect(@client.repository(@repo_name).private).to eq(true)
+      end
+
+      it 'returns nil if private repos are unavailable' do
+        # theodi doesn't have private repos available
+        @repo = GitData.create('theodi', @name, client: @client, restricted: true)
+        expect(@repo).to be_nil
+      end
+
+      it 'can make a private repo public' do
+        # @username should have private repos available if running this test
+        # without a cassette
+        @repo = GitData.create(@username, @name, client: @client, restricted: true)
+        expect(@client.repository(@repo_name).private).to eq(true)
+        @repo.make_public
+        expect(@client.repository(@repo_name).private).to eq(false)
       end
     end
 
@@ -71,8 +95,8 @@ describe GitData, :vcr do
       end
 
       it 'finds the repo' do
-        expect(@repo.full_name).to eq('git-data-publisher/my-awesome-repo')
-        expect(@repo.html_url).to eq('https://github.com/git-data-publisher/my-awesome-repo')
+        expect(@repo.full_name).to eq("#{@username}/my-awesome-repo")
+        expect(@repo.html_url).to eq("https://github.com/#{@username}/my-awesome-repo")
       end
 
       it 'builds a base tree' do
@@ -90,6 +114,15 @@ describe GitData, :vcr do
         expect(@repo.full_name).to eq('octopub-data/my-awesome-repo')
         expect(@repo.html_url).to eq('https://github.com/octopub-data/my-awesome-repo')
       end
+    end
+  end
+
+  context "#prepare_repository" do
+    it 'creates a gh-pages branch' do
+      @repo = GitData.create(@username, @name, client: @client)
+      expect(@client).to receive(:create_ref).and_call_original
+      expect(@client).to receive(:edit_repository).and_call_original
+      GitData.prepare_repository(@username, @name, @client)
     end
   end
 

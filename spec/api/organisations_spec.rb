@@ -1,9 +1,9 @@
-require 'spec_helper'
+require 'rails_helper'
 
 describe 'GET /user/organisations' do
 
   before(:each) do
-    @user = create(:user, name: "User McUser", email: "user@user.com")
+    @user = create(:user)
   end
 
   it 'lists all datasets' do
@@ -34,7 +34,7 @@ describe 'GET /user/organisations' do
       ]
     }
 
-    get '/api/user/organisations', nil, {'Authorization' => "Token token=#{@user.api_key}"}
+    get '/api/user/organisations', headers: {'Authorization' => "Token token=#{@user.api_key}"}
 
     expect(response.body).to eq([
       {

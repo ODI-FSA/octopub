@@ -4,20 +4,27 @@ class GitData
 
   def self.create(owner, repo_name, options = {})
     client = options[:client]
+    restricted = options[:restricted] || false
     if client.user[:login].downcase == owner.downcase
-      repo = client.create_repository(repo_name.parameterize, auto_init: true)
+      repo = client.create_repository(repo_name.parameterize, private: restricted, auto_init: true)
     else
-      repo = client.create_repository(repo_name.parameterize, auto_init: true, organization: owner)
+      repo = client.create_repository(repo_name.parameterize, private: restricted, auto_init: true, organization: owner)
     end
-    # Create repo that auto initializes
-    full_name = full_name(owner, repo_name)
-    # Get the current branch info
-    branch_data = client.branch full_name, 'master'
-    # Create a gh-pages branch
-    client.create_ref(full_name, 'heads/gh-pages', branch_data.commit.sha)
-    # Make the gh-pages branch the default
-    client.edit_repository(full_name, default_branch: 'gh-pages')
+   # prepare_repository(owner, repo_name, options)
     new(client, repo)
+  rescue Octokit::UnprocessableEntity # 422 error code
+    # Here, means that private repositories aren't available
+    # so return nil
+    nil
+  end
+
+  def self.prepare_repository(owner, repo_name, client)
+    # Get the current branch info
+    branch_data = client.branch(full_name(owner, repo_name), 'master')
+    # Create a gh-pages branch
+    client.create_ref(full_name(owner, repo_name), 'heads/gh-pages', branch_data.commit.sha)
+    # Make the gh-pages branch the default
+    client.edit_repository(full_name(owner, repo_name), default_branch: 'gh-pages')
   end
 
   def self.find(owner, repo_name, options = {})
@@ -69,6 +76,10 @@ class GitData
     @client.delete_repository(@full_name)
   end
 
+  def make_public
+    @client.update_repository(@full_name, restricted: false)
+  end
+
   private
 
     def commit
@@ -97,7 +108,7 @@ class GitData
     end
 
     def update_tree(filename, blob_sha)
-      item = tree.find { |item| item["path"] == filename }
+      item = tree.find { |found_item| found_item["path"] == filename }
       item["sha"] = blob_sha
     end
 
