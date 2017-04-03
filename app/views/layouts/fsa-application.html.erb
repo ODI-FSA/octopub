@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Octopub</title>
+    <title>FSA Octopub</title>
 
     <%= stylesheet_link_tag    'application', media: 'all' %>
     <%= javascript_include_tag 'application' %>
@@ -18,20 +18,55 @@
       <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
     <![endif]-->
   </head>
-  <body>
+  <body data-pusher-key="<%= Pusher.key %>" data-pusher-cluster="<%= pusher_cluster %>">
     <nav class="navbar navbar-static-top" role="navigation">
       <div class="container">
         <div class="navbar-header">
-          <a class="navbar-brand" href="/"><img src='http://www.food.gov.uk/sites/all/themes/site_frontend/logo.png' alt='FSA Data Publisher' class='logo' /></a>
+          <a class="navbar-brand" href="/"><img src='//www.food.gov.uk/sites/all/themes/site_frontend/logo.png' alt='FSA Data Publisher' class='logo' /></a>
         </div>
 
-          <ul class="nav navbar-nav">
-            <% if current_user %>
-              <li><%= link_to "Add dataset", new_dataset_path %></li>
-              <li><%= link_to "List my datasets", dashboard_path %></li>
-            <% end %>
-            <li><%= link_to "All datasets", datasets_path %></li>
-          </ul>
+        <ul class="nav navbar-nav">
+          <% if current_user %>
+            <li class="dropdown">
+              <a href="<%= main_app.datasets_path %>" class="dropdown-toggle" role="button" aria-haspopup="true" aria-expanded="false">Datasets <span class="caret"></span></a>
+              <ul class="dropdown-menu">
+                <li><%= link_to "Add dataset", main_app.new_dataset_path %></li>
+                <% if current_user.allocated_dataset_file_schemas.exists? %>
+                  <li role="separator" class="divider"></li>
+                  <% current_user.allocated_dataset_file_schemas.each do |allocated_schema| %>
+                    <li><%= link_to "Add dataset for #{allocated_schema.name}", main_app.new_dataset_file_schema_dataset_path(allocated_schema) %></li>
+                  <% end %>
+                <% end %>
+
+                <li role="separator" class="divider"></li>
+                <li><%= link_to "My datasets", main_app.user_datasets_path(current_user) %></li>
+                <% if current_user.organizations.any? %>
+                  <% current_user.organizations.each do |organization| %>
+                     <li><%= link_to "<b>#{organization.organization.login}'s</b> datasets".html_safe, main_app.organisation_datasets_path(organization.organization.login) %></li>
+                  <% end %>
+
+                <% end %>
+                <li><%= link_to "Public datasets", main_app.datasets_path %></li>
+              </ul>
+            </li>
+            <li class="dropdown" id="dataset_file_schema_dropdown">
+              <a href="<%= main_app.dataset_file_schemas_path %>" class="dropdown-toggle" role="button" aria-haspopup="true" aria-expanded="false" id="dataset_file_schema_menu">Dataset File Schemas <span class="caret"></span></a>
+              <ul class="dropdown-menu">
+                <li><%= link_to "Add dataset file schema", main_app.new_dataset_file_schema_path %></li>
+                <li><%= link_to "Infer dataset file schema", main_app.new_inferred_dataset_file_schema_path %></li>
+                <li role="separator" class="divider"></li>
+                <li><%= link_to "List my dataset file schemas", main_app.dataset_file_schemas_path %></li>
+              </ul>
+            </li>
+          <% else %>
+            <li><%= link_to "All datasets", main_app.datasets_path %></li>
+          <% end %>
+          <li><%= link_to "API", '/api' %></li>
+          <% if admin_user %>
+            <li><%= link_to "Schema Categories", main_app.schema_categories_path %></li>
+            <li><%= link_to "Users", main_app.users_path %></li>
+          <% end %>
+        </ul>
 
         <% if current_user %>
           <p class="navbar-text navbar-right">
@@ -44,10 +79,9 @@
           </p>
         <% end %>
       </div>
-
     </nav>
-    <div class="container">
 
+    <div class="container">
       <div class="row">
         <div class="col-md-10 col-md-offset-1" id="main">
           <% flash.each do |name, msg| %>
@@ -55,18 +89,14 @@
               <%= bs_alert msg, block: true, dismiss_button: true, style: "info" %>
             <% end %>
           <% end %>
-
           <%= yield %>
         </div>
       </div>
-
     </div>
 
     <footer>
       <p class="text-center text-muted">An <a href="http://theodi.org/">Open Data Institute Experiment</a></p>
     </footer>
 
-
   </body>
-  <%= yield :extra_js %>
 </html>
