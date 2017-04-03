@@ -52,7 +52,7 @@
 
   <% if current_user %>
     <p class="navbar-text navbar-right">
-      Signed in as <%= link_to current_user.name, main_app.me_path %>
+      Signed in as <%= link_to current_user.name, main_app.me_path %> with Role <%= current_user.role %>
       <%= bs_button_to 'Logout', main_app.signout_path, style: "primary" %>
     </p>
   <% else %>
