@@ -53,7 +53,7 @@ Airbrake.configure do |c|
   # Alternatively, you can integrate with Rails' filter_parameters.
   # Read more: https://goo.gl/gqQ1xS
   # c.blacklist_keys = Rails.application.config.filter_parameters
-end
+end unless ENV['AIRBRAKE_PROJECT_ID'].nil?
 
 # If Airbrake doesn't send any expected exceptions, we suggest to uncomment the
 # line below. It might simplify debugging of background Airbrake workers, which
