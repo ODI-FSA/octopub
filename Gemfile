@@ -25,7 +25,7 @@ gem 'grape-swagger-rails', git: 'https://github.com/pezholio/grape-swagger-rails
 gem 'csvlint', git: 'https://github.com/jamesjefferies/csvlint.rb.git', branch: 'ruby-2.4-rails-5.0-compatibility'
 
 # New way of validating schemas
-gem 'jsontableschema'
+gem 'jsontableschema', git: 'https://github.com/Floppy/jsontableschema-rb', branch: 'infer-with-empty-cells'
 
 # User related
 gem 'omniauth-github'
@@ -39,6 +39,7 @@ gem 'rails-bootstrap-helpers'
 gem 'bootstrap-select-rails'
 gem 'bootstrap_form'
 gem "bootstrap-table-rails"
+gem 'emd'
 
 # Logging and debug
 gem 'awesome_print'
@@ -115,6 +116,7 @@ group :test do
   gem 'coveralls', '~> 0.8.20'
   gem 'vcr'
   gem 'webmock'
+  gem 'timecop'
   gem 'foreman'
   # Rails 5 has pulled out 'assigns' - this puts it back
   gem 'rails-controller-testing'

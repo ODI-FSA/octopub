@@ -22,6 +22,7 @@
 #  certificate_url   :string
 #  job_id            :string
 #  publishing_method :integer          default("github_public"), not null
+##TODO does above have to be updated to reflect changes made by migrations?
 #
 
 class Dataset < ApplicationRecord
@@ -40,26 +41,24 @@ class Dataset < ApplicationRecord
   validates_associated :dataset_files
 
   def report_status(channel_id, action = :create)
-    Rails.logger.info "Dataset: in report_status #{channel_id}"
-    Rails.logger.info "Dataset: file count: #{dataset_files.count}"
+    Rails.logger.info "Dataset: in report_status #{channel_id} with #{dataset_files.count} files"
+
     if valid?
       Pusher[channel_id].trigger('dataset_created', self) if channel_id
       Rails.logger.info "Dataset: Valid so now do the save and trigger the after creates"
       save
-      if publishing_method == 'local_private'
-        send_success_email
-      end
 
-      unless publishing_method == 'local_private' || action == :update
+      if local_private?
+        send_success_email
+      elsif action == :create
         # You only want to do this if it's private or public github
-        CreateRepository.perform_async(id) unless publishing_method == 'local_private'
+        CreateRepository.perform_async(id)
       end
     else
-      Rails.logger.info "Dataset: In valid, so push to pusher"
+      Rails.logger.info "Dataset: Invalid, so push to pusher"
       messages = errors.full_messages
       dataset_files.each do |file|
         unless file.valid?
-          Rails.logger.info "Dataset: Check file is valid"
           (file.errors.messages[:file] || []).each do |message|
             messages << "Your file '#{file.title}' #{message}"
           end
@@ -84,6 +83,7 @@ class Dataset < ApplicationRecord
       "permalink" => 'pretty'
     }.to_yaml
   end
+
 
   def github_url
     "http://github.com/#{full_name}"
@@ -122,6 +122,46 @@ class Dataset < ApplicationRecord
     SendTweetService.new(self).perform
   end
 
+  def deprecated_resource
+    url_deprecated_at.present?
+  end
+
+  def self.check_urls
+    # check if dataset URL is live
+    Dataset.all.each do |dataset|
+      if dataset.url.nil? #dataset URLs can be nil without indicating dead resource,
+        puts "#{dataset.name} lacks URL: #{dataset.url}"
+        Rails.logger.warn "#{dataset.name} lacks URL"
+      end # TODO should this be in eval_response_code?
+
+      if eval_response_code?(dataset.url)
+        puts "#{dataset.name} has URL live at #{dataset.url}"
+        Rails.logger.info "#{dataset.name} live at #{dataset.url}"
+      else
+        puts "#{dataset.name} lacks URL : #{dataset.url}"
+        Rails.logger.warn "#{dataset.name} no longer has a live URL : #{dataset.url}"
+        dataset.update_column(:url_deprecated_at, DateTime.now())
+      end
+    end
+  end
+
+  def self.eval_response_code?(url_string)
+    begin
+      url = URI.parse(url_string)
+      req = Net::HTTP.new(url.host, url.port)
+      req.use_ssl = true if url.scheme == 'https' # TY gentle knight https://gist.github.com/murdoch/1168520#gistcomment-1238015
+      res = req.request_head(url.path)
+      res.code.to_i == 200
+    rescue URI::InvalidURIError, Addressable::URI::InvalidURIError => e
+      puts "cannot parse via Addressable #{e.message}"
+      false
+    rescue ArgumentError => e
+      puts "Argument Error for that address #{e.message}"
+      false
+    end
+    # is this the better way to do this method? https://github.com/bblimke/webmock#response-with-custom-status-message
+  end
+
   private
 
     # This is a callback
@@ -129,9 +169,13 @@ class Dataset < ApplicationRecord
       Rails.logger.info "in update_dataset_in_github"
       return if local_private?
 
-      jekyll_service.update_dataset_in_github
-      make_repo_public_if_appropriate
-      publish_public_views
+      if publishing_method_was == 'local_private' && github_public?
+        CreateRepository.perform_async(id)
+      else
+        jekyll_service.update_dataset_in_github
+        make_repo_public_if_appropriate
+        publish_public_views
+      end
     end
 
     def make_repo_public_if_appropriate
