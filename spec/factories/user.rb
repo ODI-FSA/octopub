@@ -1,4 +1,4 @@
-FactoryBot.define do
+FactoryGirl.define do
   factory :user do
     provider "github"
     uid "1234556"

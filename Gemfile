@@ -28,7 +28,7 @@ gem 'jsontableschema', git: 'https://github.com/Floppy/jsontableschema-rb', bran
 
 # User related
 gem 'omniauth-github'
-gem 'cancancan', '~> 2.1'
+gem 'cancancan', '~> 2.0'
 
 # Bootstrap and view stuff
 gem 'bootstrap-sass', '~> 3.2.0'
@@ -48,7 +48,7 @@ gem 'grape'
 gem 'grape-route-helpers'
 # There are breaking changes in 0.26.1 so freeze here for now
 gem 'grape-swagger', '0.27.3'
-gem 'grape-swagger-entity', '~> 0.2.3'
+gem 'grape-swagger-entity', '~> 0.2.1'
 
 # Markdown processing, rendering & syntax highlighting
 gem 'redcarpet'
@@ -112,7 +112,7 @@ group :test do
   gem 'pry'
   gem 'poltergeist'
   gem 'faker'
-  gem 'factory_bot_rails'
+  gem 'factory_girl_rails'
   gem 'coveralls', '~> 0.8.21'
   gem 'vcr'
   gem 'webmock'
